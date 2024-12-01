@@ -1,0 +1,326 @@
+from termcolor import colored
+import random
+
+MAX_RESERVATIONS = 50
+MAX_STOCK_ITEMS = 4
+
+stock = {
+    'room': [1, 2, 2, 2],
+    'package': [2, 2, 2, 2],
+    'kubo': [2, 2, 2, 2],
+    'food': [2, 2, 2, 2],
+    'drink': [2, 2, 2, 2],
+}
+
+
+reservations = [{
+    'num_of_adults': 0,
+    'num_of_kids': 0,
+    'guest_name': "",
+    'address': "",
+    'phone_number': "",
+    'check_in_date': "",
+    'check_in_time': "",
+    'check_out_date': "",
+    'check_out_time': ""
+} for _ in range(MAX_RESERVATIONS)]
+
+item_prices = {
+    'rooms': [1999, 3999, 4999, 6999],
+    'packages': [1999, 2499, 1499, 4999],
+    'kubos': [1500, 2500, 3999, 7999],
+    'foods': [219, 329, 269, 949],
+    'drinks': [69, 139, 179, 160],
+    'activities': [2499, 1999, 1599, 500]
+}
+
+def hotel_desk():
+    print("\n1. Reservation")
+    print("2. Rooms")
+    print("3. Day Tour Package Offers")
+    print("4. Kubo for Rent")
+    print("5. Foods")
+    print("6. Drinks")
+    print("7. Activities")
+    print("8. View Available Items")
+    print("9. View History")
+    print("10. Exit\n")
+
+def rooms():
+    print("\n1. Standard Room @ 1999 / 2. Studio Type @ 3999 / 3. Executive Room @ 4999 / 4. Bridal Room @ 6999")
+
+def print_day_tour_packages():
+    print("\n1. Swimming Pool Access + Lunch: @ 1999.00 / 2. Guided Nature Walk + Picnic: @ 2499.00 / 3. Beach Volleyball + Snacks: @ 1499.00 / 4. Island Hopping @ 4999.00")
+
+def print_kubo_for_rent():
+    print("\n1. Up to 3 persons @1500.00 / 2. Up to 6 persons @2500.00 / 3. Up to 9 persons @3999.00 / 4. Up to 15 persons @7999.00")
+
+def foods():
+    print("\n1. Fried Vegetables @ 219.00 / 2. Pork Sisig @ 329.00 / 3. Crispy Calamansi & Garlic Mayo Pie @ 269.00 / 4. Anghela's Mayo @ 949.00")
+
+def drinks():
+    print("\n1. Water @ 69.00 / 2. Mango Focus @ 139.00 / 3. Watermelon Fix @ 179.00 / 4. Orange Fish Eye @ 160.00")
+
+def activities():
+    print("\n1. Floating Breakfast (Good for 2-3 pax) @ 2499.00 / 2. Signature Massage (Good for 2 pax) @ 1999.00 / 3. Swimming @ 1599.00 / 4. GYM (per-person) @ 500.00")
+
+def collect_reservation_info():
+    print("\nPlease provide the following details below.")
+    guest_name = input("\nGuest Name: ")
+    phone_number = input("Phone Number: ")
+    address = input("Address: ")
+    num_adults = int(input("Number of Adults: "))
+    num_kids = int(input("Number of Kids: "))
+    check_in_date = input("Check-in Date (DD-MM-YYYY): ")
+    check_in_time = input("Check-in Time: ")
+    check_out_date = input("Check-out Date (DD-MM-YYYY): ")
+    check_out_time = input("Check-out Time: ")
+    return guest_name, phone_number, address, num_adults, num_kids, check_in_date, check_in_time, check_out_date, check_out_time
+
+def update_stock(choice, selected_item, quantity):
+    stock_items = {
+        1: stock['room'],
+        2: stock['package'],
+        3: stock['kubo'],
+        4: stock['food'],
+        5: stock ['drink']
+    }
+
+    selected_stock = stock_items.get(choice)
+    if selected_stock is None:
+        print("Invalid choice!")
+        return
+
+    if selected_stock[selected_item - 1] < quantity:
+        print("Insufficient stock for the selected item. Reservation not accepted.")
+        return
+
+    selected_stock[selected_item - 1] -= quantity
+
+def view_available_items():
+    print("\nAvailable Items to Reserve:")
+    for i, (item, quantities) in enumerate(stock.items(), start=1):
+        print(f"{i}. {item.capitalize()}")
+        for j in range(MAX_STOCK_ITEMS):
+            print(f"   {j + 1}. {item.capitalize()} Option {j + 1} (Stock: {quantities[j]})")
+        print("\n-----------------------------")
+
+def store_reservations():
+    global reservations
+    reservations = [{
+        'guest_name': "",
+        'address': "",
+        'phone_number': "",
+        'num_of_adults': 0,
+        'num_of_kids': 0,
+        'check_in_date': "",
+        'check_in_time': "",
+        'check_out_date': "",
+        'check_out_time': ""
+    } for i in range(MAX_RESERVATIONS)]
+
+def view_history():
+    print("\nCheck-in History:")
+    is_empty = True
+    for i in range(MAX_RESERVATIONS):
+        if reservations[i]['guest_name'] != "":
+            print("\n-----------------------------------------")
+            print(f"\nReservation ID: {i + 1}\n")
+            print(f"Guest: {reservations[i]['guest_name']}\n")
+            print(f"Address: {reservations[i]['address']}\n")
+            print(f"Phone Number: {reservations[i]['phone_number']}\n")
+            print(f"Number of Adults: {reservations[i]['num_of_adults']}\n")
+            print(f"Number of Kids: {reservations[i]['num_of_kids']}\n")
+            print(f"Check-in Date: {reservations[i]['check_in_date']}\n")
+            print(f"Check-in Time: {reservations[i]['check_in_time']}\n")
+            print(f"Check-out Date: {reservations[i]['check_out_date']}\n")
+            print(f"Check-out Time: {reservations[i]['check_out_time']}\n")
+            is_empty = False
+    if is_empty:
+        print("There is no recorded history yet.\n")
+
+def calculate_total(item_price, quantity):
+    return item_price * quantity
+
+def get_price_and_name(choice, selected_item):
+    if choice == 2:
+        return item_prices['rooms'][selected_item - 1], f"Room Option {selected_item}"
+    elif choice == 3:
+        return item_prices['packages'][selected_item - 1], f"Package Option {selected_item}"
+    elif choice == 4:
+        return item_prices['kubos'][selected_item - 1], f"Kubo Option {selected_item}"
+    elif choice == 5:
+        return item_prices['foods'][selected_item - 1], f"Food Option {selected_item}"
+    elif choice == 6:
+        return item_prices['drinks'][selected_item - 1], f"Drink Option {selected_item}"
+    elif choice == 7:
+        return item_prices['activities'][selected_item - 1], f"Activity Option {selected_item}"
+    else:
+        print("Invalid choice!")
+        return 0, ""
+
+def random_promotion():
+    promotions = [
+        "10% off on your next booking!", "Free drink with every meal order!", "Complimentary spa for every room booking!"
+    ]
+    print("\n🎉 Today's Promotion:", random.choice(promotions))
+
+def collect_feedback():
+    rating = int(input("\nRate your experience (1-5): "))
+    comment = input("Additional comments: ")
+    print(f"Thank you for your feedback!! \nRating: {rating}/5 - \nComment: {comment}")
+
+def main():
+    store_reservations()
+    continue_guest = ""
+    reservation_index = -1
+    while True:
+        choice, quantity, total = 0, 0, 0
+        pay, add_payment, charge = 0, 0, 0
+        continue_choice = ""
+        all_orders = ""
+        guest_name, phone_number, address, check_in_date, check_in_time, check_out_date, check_out_time = "", "", "", "", "", "", ""
+
+        print(colored("\t\t\t\t\t\t************************", "blue"))
+        print(colored("\n\t\t\t\t\t\t BEST RESORT AND HOTEL", "blue"))
+        print(colored("\n\t\t\t\t\t\t************************\n\n", "blue"))
+
+        print(colored("\n\t\t\t\t\t***WELCOME MA'AM & SIR TO MAYARI RESORT AND HOTEL.***\nWe are delighted to have you as our guest and look forward to providing you an unforgettable stay. Please let me or anyone on the staff know if there is anything we can do for you throughout your time with us.\n\n", "blue"))
+        print("\n---------------------------------------------- ")
+        print("\n\t\tMAIN MENU")
+        print("\n---------------------------------------------- ")
+
+        while True:
+            hotel_desk()
+            choice = int(input("\nEnter your Choice Ma'am/Sir: "))
+
+            if choice == 1:
+                for i in range(MAX_RESERVATIONS):
+                    if reservations[i]['guest_name'] == "":
+                        reservation_index = i
+                        break
+                if reservation_index == -1:
+                    print("\nSorry, all reservations are full. Please try again later.\n")
+                    break
+                guest_name, phone_number, address, num_adults, num_kids, check_in_date, check_in_time, check_out_date, check_out_time = collect_reservation_info()
+
+                print("\n-----------------------------")
+                print("\nReservation Details:\n")
+                print(f"Guest Name: {guest_name}")
+                print(f"Phone Number: {phone_number}")
+                print(f"Address: {address}")
+                print(f"Number of Adults: {num_adults}")
+                print(f"Number of Kids: {num_kids}")
+                print(f"Select your preferred Check-in Date: {check_in_date}")
+                print(f"Check-in Time: {check_in_time}")
+                print(f"Check-out Date: {check_out_date}")
+                print(f"Check-out Time: {check_out_time}")
+                print("\n-----------------------------")
+
+                reservations[reservation_index]['guest_name'] = guest_name
+                reservations[reservation_index]['address'] = address
+                reservations[reservation_index]['phone_number'] = phone_number
+                reservations[reservation_index]['num_of_adults'] = num_adults
+                reservations[reservation_index]['num_of_kids'] = num_kids
+                reservations[reservation_index]['check_in_date'] = check_in_date
+                reservations[reservation_index]['check_in_time'] = check_in_time
+                reservations[reservation_index]['check_out_date'] = check_out_date
+                reservations[reservation_index]['check_out_time'] = check_out_time
+
+                print(f"\nReservation successful! Your reservation ID is: {reservation_index + 1}")
+                reservation_index = -1
+
+                random_promotion()
+
+                continue_choice = input("\nDo you want to continue browsing the main menu? (yes/no): ")
+                if continue_choice.lower() == "no":
+                    break
+                continue
+
+            elif choice == 2:
+                rooms()
+            elif choice == 3:
+                print_day_tour_packages()
+            elif choice == 4:
+                print_kubo_for_rent()
+            elif choice == 5:
+                foods()
+            elif choice == 6:
+                drinks()
+            elif choice == 7:
+                activities()
+            elif choice == 8:
+                view_available_items()
+                continue_choice = input("\nDo you want to continue browsing the main menu? (yes/no): ")
+                if continue_choice.lower() == "yes":
+                    continue
+            elif choice == 9:
+                view_history()
+                continue_choice = input("\nDo you want to continue browsing the main menu? (yes/no): ")
+                if continue_choice.lower() == "yes":
+                    break
+                continue
+            elif choice == 10:
+                print("Thank you for visiting Mayari Resort and Hotel. Have a great day!\n")
+                print("\n-----------------------------")
+                print("Contact us:\nata.liraangela.r@gmail.com\nPhone Number: 09984996493\nFacebook Account: MAYARI SIMPLE RESORT AND HOTEL")
+                return
+            else:
+                print("Invalid choice! Please try again.\n")
+                continue
+
+            selected_item = int(input("\nEnter the item choice: "))
+            price, item_name = get_price_and_name(choice, selected_item)
+
+            if choice == 1:
+                continue
+            elif price == 0:
+                continue
+
+            quantity = int(input("Enter the quantity: "))
+            total += calculate_total(price, quantity)
+            update_stock(choice, selected_item, quantity)
+            all_orders += f"{item_name} x{quantity}\n"
+
+            continue_choice = input("Do you want to continue to choose, Ma'am and Sir? (yes, no): ")
+            if continue_choice.lower() == "no":
+                break
+
+        while pay < total:
+            print(f"Current total: PHP {total}")
+            add_payment = float(input("\nEnter payment: PHP "))
+            if pay + add_payment < total:
+                print("Insufficient payment, please add more.")
+            else:
+                pay += add_payment
+
+        charge = pay - total
+        print(f"Your change is: PHP {charge}")
+
+        print("\n-----------------RECEIPT----------------")
+
+        print("\nReservation Details:\n")
+        print(f"Guest Name: {guest_name}")
+        print(f"Phone Number: {phone_number}")
+        print(f"Address: {address}")
+        print(f"Number of Adults: {num_adults}")
+        print(f"Number of Kids: {num_kids}")
+        print(f"Check-in Date: {check_in_date}")
+        print(f"Check-in Time: {check_in_time}")
+        print(f"Check-out Date: {check_out_date}")
+        print(f"Check-out Time: {check_out_time}")
+        print("\n-----------------------------")
+        print("\nYour Reserved:\n" + all_orders)
+
+        print("\nThank you for visiting us at MAYARI RESORT AND HOTEL.\nWe hope we achieved our goal of making your stay memorable by providing outstanding service.")
+        continue_guest = input("\nIs there another guest, Ma'am/Sir? (yes/no): ")
+        collect_feedback()
+        if continue_guest.lower() == "no":
+            print("Thank you for your visit. Have a great day!")
+            break
+        elif continue_guest.lower() == "yes":
+            store_reservations()
+            continue
+
+if __name__ == "__main__":
+    main()
