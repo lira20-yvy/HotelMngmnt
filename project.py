@@ -1,11 +1,33 @@
 import random
+import csv
 from termcolor import colored
 
-stock = {
-    'room': [10, 10, 10, 10],
-    'package': [10, 10, 10, 10],
-    'food': [10, 10, 10, 10],
-}
+def load_stock(filename):
+    stock = {}
+    default_stock = {
+        'rooms': [3, 3, 3, 2],
+        'packages': [3, 2, 2, 2],
+        'foods': [3, 3, 2, 2],
+    }
+    try:
+        with open(filename, mode='r') as file:
+            reader = csv.reader(file)
+            next(reader)
+            for row in reader:
+                item_type, *values = row
+                stock[item_type] = list(map(int, values))
+    except FileNotFoundError:
+        print(f"{filename} not found.")
+        stock = default_stock
+        save_stock(filename, stock)
+    return stock
+
+def save_stock(filename, stock):
+    with open(filename, mode='w', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow(["item_type", "item1", "item2", "item3", "item4"])
+        for item_type, values in stock.items():
+            writer.writerow([item_type] + values)
 
 item_prices = {
     'rooms': [1999, 3999, 4999, 6999],
@@ -14,7 +36,7 @@ item_prices = {
 }
 
 def hotel_desk():
-    print("\n Available on MAYARI'S SIMPPLY HOTEL")
+    print("\n Available on MAYARI'S SIMPLY HOTEL")
     print("\n1. Reservation form")
     print("2. Rooms")
     print("3. Day Tour Package Offers")
@@ -35,15 +57,20 @@ def collect_reservation_info():
     guest_name = input("\nGuest Name: ")
     phone_number = input("Phone Number: ")
     address = input("Address: ")
-    num_adults = int(input("Number of Adults: "))
-    num_kids = int(input("Number of Kids: "))
+    while True:
+        try:
+            num_adults = int(input("Number of Adults: "))
+            num_kids = int(input("Number of Kids: "))
+            break
+        except ValueError:
+            print("Invalid input! Please enter numbers only.")
     arrival_date = input("Arrival Date (DD-MM-YYYY): ")
     arrival_time = input("Arrival Time: ")
     return guest_name, phone_number, address, num_adults, num_kids, arrival_date, arrival_time
 
-def update_stock(item_type, selected_item, quantity):
+def update_stock(stock, item_type, selected_item, quantity):
     if stock[item_type][selected_item - 1] < quantity:
-        print("Insufficient stock for the selected item. Registration not accepted.")
+        print(colored("\nThis item is reserved by another guest. Please choose another one.", "red"))
         return False
     stock[item_type][selected_item - 1] -= quantity
     return True
@@ -68,6 +95,7 @@ def random_promotion():
     ]
     print("\n🎉 Today's Promotion:", random.choice(promotions))
 
+
 def collect_feedback():
     while True:
         try:
@@ -83,20 +111,29 @@ def collect_feedback():
     print(f"Thank you for your feedback!! \nRating: {rating}/5 - \nComment: {comment}")
 
 def main():
+    stock_filename = "stocks.csv"
+    stock = load_stock(stock_filename)
+
     while True:
         choice, quantity, total = 0, 0, 0
         pay, add_payment, charge = 0, 0, 0
         all_orders = ""
         guest_name, phone_number, address, arrival_date, arrival_time = "", "", "", "", ""
 
-        print(colored("\n\t\t\t\t\t***WELCOME MA'AM & SIR TO MAYARI SIMPLY HOTEL.***\ nWe are delighted to have you as our guest and look forward to providing you an unforgettable stay. Please let me or anyone on the staff know if there is anything we can do for you throughout your time with us.\n\n", "blue"))
+        print(colored("\n\t\t\t\t\t***WELCOME MA'AM & SIR TO MAYARI SIMPLY HOTEL.***\nWe are delighted to have you as our guest and look forward to providing you an unforgettable stay. Please let me or anyone on the staff know if there is anything we can do for you throughout your time with us.\n\n", "blue"))
         print(colored("\n---------------------------------------------- ", "blue"))
         print(colored("\n\t\tMAIN MENU", "blue"))
         print(colored("\n---------------------------------------------- ", "blue"))
 
         while True:
             hotel_desk()
-            choice = int(input(colored("\nEnter your Choice Ma'am/Sir: ", "blue")))
+            try:
+                choice = int(input(colored("\nEnter your Choice Ma'am/Sir: ", "blue")))
+                if choice not in [1, 2, 3, 4, 5]:
+                    raise ValueError("Invalid menu option.")
+            except ValueError:
+                print("Invalid input! Please enter a valid menu option (1-5).")
+                continue
 
             if choice == 1:
                 guest_name, phone_number, address, num_adults, num_kids, arrival_date, arrival_time = collect_reservation_info()
@@ -127,20 +164,33 @@ def main():
                 foods()
             elif choice == 5:  # Exit option
                 print("Thank you for your visit. Have a great day!")
+                save_stock(stock_filename, stock)
                 return  # Exit the program
-            else:
-                print("Invalid choice! Please try again.\n")
-                continue
 
-            selected_item = int(input("\nEnter the item choice: "))
-            price, item_name = get_price_and_name(choice, selected_item)
+            while True:
+                try:
+                    selected_item = int(input("\nEnter the item choice: "))
+                    if selected_item < 1 or selected_item > 4:
+                        raise ValueError("Invalid item choice.")
+                except ValueError:
+                    print("Invalid input! Please select a valid item (1-4).")
+                    continue
 
-            if price == 0:
-                continue
+                price, item_name = get_price_and_name(choice, selected_item)
 
-            quantity = int(input("Enter the quantity: "))
-            if not update_stock(['room', 'package', 'food'][choice - 2], selected_item, quantity):
-                continue
+                if price == 0:
+                    continue
+
+                try:
+                    quantity = int(input("Enter the quantity: "))
+                    if quantity <= 0:
+                        raise ValueError("Quantity must be positive.")
+                except ValueError:
+                    print("Invalid input! Please enter a positive number for quantity.")
+                    continue
+
+                if update_stock(stock, ['rooms', 'packages', 'foods'][choice - 2], selected_item, quantity):
+                    break
 
             total += calculate_total(price, quantity)
 
@@ -153,11 +203,16 @@ def main():
 
         while pay < total:
             print(f"\nCurrent total: PHP {total}")
-            add_payment = float(input("\nEnter payment: PHP "))
-            if pay + add_payment < total:
-                print("Insufficient payment, please add more.")
-            else:
+            try:
+                add_payment = float(input("\nEnter payment: PHP "))
+                if add_payment <= 0:
+                    raise ValueError("Payment must be positive.")
                 pay += add_payment
+                if pay < total:
+                    print("Insufficient payment, please add more.")
+            except ValueError:
+                print("Invalid input! Please enter a valid number.")
+                continue
 
         charge = pay - total
         print(f"Your change is: PHP {charge}")
@@ -181,9 +236,7 @@ def main():
         collect_feedback()
         if continue_guest.lower() == "no":
             print("Thank you for your visit. Have a great day!")
-            break
-        elif continue_guest.lower() == "yes":
-            continue
+            save_stock(stock_filename, stock)
 
 if __name__ == "__main__":
     main()
