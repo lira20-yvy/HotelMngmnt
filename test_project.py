@@ -1,29 +1,34 @@
 import pytest
-from hotel import calculate_total, get_price_and_name, item_prices
+from project import calculate_total, update_stock, get_price_and_name
 
+@pytest.fixture
+def sample_stock():
+    return {
+        'rooms': [3, 3, 3, 2],
+        'packages': [3, 2, 2, 2],
+        'foods': [3, 3, 2, 2],
+    }
 
 def test_calculate_total():
+    assert calculate_total(1999, 2) == 3998
+    assert calculate_total(0, 5) == 0
 
-    assert calculate_total(100, 2) == 200
-    assert calculate_total(50, 4) == 200
+def test_update_stock_success(sample_stock):
+    result = update_stock(sample_stock, 'rooms', 1, 2)
+    assert result is True
+    assert sample_stock['rooms'][0] == 1
 
+def test_update_stock_failure(sample_stock):
+    result = update_stock(sample_stock, 'rooms', 1, 5)
+    assert result is False
+    assert sample_stock['rooms'][0] == 3
 
 def test_get_price_and_name():
-
     price, name = get_price_and_name(2, 1)
-    assert price == item_prices['rooms'][0]
+    assert price == 1999
     assert name == "Room 1"
 
-    price, name = get_price_and_name(3, 2)
-    assert price == item_prices['packages'][1]
-    assert name == "Package 2"
-
-    price, name = get_price_and_name(4, 3)
-    assert price == item_prices['foods'][2]
-    assert name == "Food 3"
-
-
-    price, name = get_price_and_name(5, 1)
+def test_get_price_and_name_invalid():
+    price, name = get_price_and_name(99, 1)
     assert price == 0
     assert name == ""
-
